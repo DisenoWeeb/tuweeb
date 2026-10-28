@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>tuWeeb Scene</title>
+<title>Weeb Scene</title>
 <style>
   :root { --bg0:#0a0c11; --bg1:#10131a; --bg2:#171b25; --line:#212736; --line2:#2e364a; --tx:#e6e9f0; --tx2:#8790a5; --acc:#49d3ff; --danger:#ff6b7d; }
   * { box-sizing: border-box; }
@@ -862,6 +862,7 @@ const TOUCH_INERTIA = 6;
 const MOBILE_SNAP = false;
 const CAM_NEAR_CFG = 0.1;
 const MOBILE_LIGHTS = 6;
+const MOBILE_SHADOWS = false;
 const MOBILE_SMOOTH_ALL = true;
 const SCROLL_2D_NATIVE = true;
 const MOBILE_LEN_PCT = 100;
@@ -4310,9 +4311,10 @@ function SceneObjectLight({ data }) {
   });
   useEffect(() => () => { WEEB_LIGHTS.delete(tgt.uuid); }, [tgt]);
   const common = { color: data.lightColor || "#fff4e0", intensity: 0, distance: data.lightDistance || 0, decay: data.lightDecay ?? 2 };
-  const shadow = !!data.lightShadow && perf.tier >= 2 && !IS_MOBILE_VIEW;
+  const phoneSh = MOBILE_SHADOWS && IS_PHONE && perf.tier >= 1;   // opción "Sombras de los spots en celular"
+  const shadow = !!data.lightShadow && (phoneSh || (perf.tier >= 2 && !IS_MOBILE_VIEW));
   if (data.lightKind === "point") return <pointLight ref={ref} {...common} castShadow={shadow} />;
-  return <spotLight ref={ref} {...common} angle={Math.min(1.5, Math.max(0.05, ((data.lightAngle ?? 35) * Math.PI) / 180))} penumbra={data.lightPenumbra ?? 0.5} castShadow={shadow} shadow-mapSize={[1024, 1024]} shadow-bias={-0.0004} shadow-normalBias={0.02} />;
+  return <spotLight ref={ref} {...common} angle={Math.min(1.5, Math.max(0.05, ((data.lightAngle ?? 35) * Math.PI) / 180))} penumbra={data.lightPenumbra ?? 0.5} castShadow={shadow} shadow-mapSize={phoneSh ? [512, 512] : [1024, 1024]} shadow-bias={-0.0004} shadow-normalBias={0.02} />;
 }
 function SceneObject({ data }) {
   if (data.type === "light") return <SceneObjectLight data={data} />;
@@ -7819,7 +7821,7 @@ const SCROLL_SPEED = ${postFx.scrollSpeed ?? 0};
 const SCROLL_MAX_PPS = ${postFx.scrollMaxPps ?? 1.5};
 const SCROLL_SPEED_MOBILE = ${postFx.scrollSpeedMobile ?? 0};
 const TOUCH_INERTIA = ${postFx.touchInertia ?? 6};
-const MOBILE_SNAP = ${postFx.mobileSnap ? "true" : "false"};\nconst CAM_NEAR_CFG = ${Math.min(2, Math.max(0.01, +postFx.camNear || 0.1))};\nconst MOBILE_LIGHTS = ${Math.max(0, Math.min(40, Math.round(postFx.mobileLights ?? 6)))};\nconst MOBILE_SMOOTH_ALL = ${postFx.mobileSmoothAll === false ? "false" : "true"};\nconst SCROLL_2D_NATIVE = ${postFx.scroll2d === "smooth" ? "false" : "true"};\nconst MOBILE_LEN_PCT = ${Math.min(100, Math.max(30, Math.round(+postFx.mobileLength || 100)))};`;
+const MOBILE_SNAP = ${postFx.mobileSnap ? "true" : "false"};\nconst CAM_NEAR_CFG = ${Math.min(2, Math.max(0.01, +postFx.camNear || 0.1))};\nconst MOBILE_LIGHTS = ${Math.max(0, Math.min(40, Math.round(postFx.mobileLights ?? 6)))};\nconst MOBILE_SHADOWS = ${postFx.mobileShadows ? "true" : "false"};\nconst MOBILE_SMOOTH_ALL = ${postFx.mobileSmoothAll === false ? "false" : "true"};\nconst SCROLL_2D_NATIVE = ${postFx.scroll2d === "smooth" ? "false" : "true"};\nconst MOBILE_LEN_PCT = ${Math.min(100, Math.max(30, Math.round(+postFx.mobileLength || 100)))};`;
 }
 
 /* Genera el bloque de configuración de la estela de brillo, con el
@@ -11298,6 +11300,7 @@ function App() {
                         <Switch label="Una pose por deslizamiento" checked={!!postFx.mobileSnap} onChange={(v) => setSc({ mobileSnap: v })} />
                         <SelectRow label="Scroll en las páginas 2D" value={postFx.scroll2d === "smooth" ? "smooth" : "native"} onChange={(v) => setSc({ scroll2d: v })} options={[["native", "Nativo del navegador (máxima fluidez, recomendado)"], ["smooth", "Amortiguado (como el 3D, más pesado)"]]} />
                         <Slider label={"Largo del recorrido 3D en celular (" + Math.round(postFx.mobileLength || 100) + "%)"} min={30} max={100} step={5} value={postFx.mobileLength || 100} onChange={(v) => setSc({ mobileLength: v })} />
+                        <Switch checked={!!postFx.mobileShadows} onChange={(v) => setSc({ mobileShadows: v })} label="Sombras de los spots en celular (más pesado)" />
                         <Slider label="Luces máximas en celular (0 = todas)" min={0} max={20} step={1} value={postFx.mobileLights ?? 6} onChange={(v) => setSc({ mobileLights: v })} />
                         {!postFx.mobileSnap && <Slider label={`Velocidad celular (0 = auto ×${Math.max(1, Math.round((postFx.scrollSpeed > 0 ? postFx.scrollSpeed : autoSpeed) * 0.4 * 2) / 2)})`} min={0} max={15} step={0.5} value={postFx.scrollSpeedMobile ?? 0} onChange={(v) => setSc({ scrollSpeedMobile: v })} />}
                         {!postFx.mobileSnap && <Slider label="Inercia del dedo" min={0} max={20} step={1} value={postFx.touchInertia ?? 6} onChange={(v) => setSc({ touchInertia: v })} />}
